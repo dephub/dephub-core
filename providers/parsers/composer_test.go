@@ -153,18 +153,4 @@ func TestComposerRequirementsMethod_Errors(t *testing.T) {
 			}
 		})
 	}
-
-	// bf := fetchers.ByteMapFetcher{Files: map[string][]byte{
-	// 	"dsafsdfd": []byte(`{}`),
-	// }}
-	// parser := NewComposerParser(bf)
-
-	// reqs, err := parser.Requirements(context.Background())
-
-	// if err == nil || err.Error() != "unable to fetch composer dependencies from the source: file not found" {
-	// 	t.Error("expected error in not existing file in composer requirements, got none")
-	// }
-	// if reqs != nil {
-	// 	t.Errorf("expected nil requirements, got: %+v", reqs)
-	// }
 }
