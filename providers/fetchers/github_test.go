@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -82,5 +83,29 @@ func TestFetchContentMethod_MultipleReposError(t *testing.T) {
 	_, err := fetcher.FileContent(context.Background(), "test.txt")
 	if err == nil && err.Error() != "parameter is a directory or not a valid file" {
 		t.Error(err)
+	}
+}
+
+func TestByteMapFetcher(t *testing.T) {
+	files := map[string][]byte{
+		"first.txt":       []byte("First file content"),
+		"second/test.bin": []byte("Second file content"),
+	}
+	fetcher := ByteMapFetcher{Files: files}
+
+	result, err := fetcher.FileContent(context.Background(), "first.txt")
+	if err != nil {
+		t.Errorf("unexpected error on byte map file content: %v", err)
+	}
+	if !reflect.DeepEqual(files["first.txt"], result) {
+		t.Error("resulting file in byte map fetcher is incorrect")
+	}
+
+	result, err = fetcher.FileContent(context.Background(), "unknown_file")
+	if err == nil {
+		t.Error("expected not found error in byte map fetcher, got none")
+	}
+	if result != nil {
+		t.Errorf("expected nil result on unknown file, got '%-v'", result)
 	}
 }

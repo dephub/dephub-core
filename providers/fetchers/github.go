@@ -20,6 +20,20 @@ type FileFetcher interface {
 	FileContent(ctx context.Context, path string) ([]byte, error)
 }
 
+// ByteMapFetcher is used for storing file contents in memory (usefull for debugging/testing or for building custom repositories logic)
+type ByteMapFetcher struct {
+	Files map[string][]byte
+}
+
+// FileContent retrieves (if found) []byte contents from it's map using path argument as a key.
+func (sf ByteMapFetcher) FileContent(ctx context.Context, path string) ([]byte, error) {
+	v, ok := sf.Files[path]
+	if !ok {
+		return nil, fmt.Errorf("file not found")
+	}
+	return v, nil
+}
+
 // GitHubFetcher fetches files from the specified repository.
 // Owner and Repo represent '{owner}/{repo}' notation.
 // httpClient can be used as OAuth2 or BasicAuth http transport.
