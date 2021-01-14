@@ -117,8 +117,6 @@ func (ps *FoundSearch) Next(ctx context.Context) (bool, error) {
 	}
 	ps.opts.Page++
 
-	fmt.Println(ps.opts.Page)
-
 	nextPs, _, err := ps.client.Search(ctx, ps.q, &ps.opts)
 	if err != nil || ps.NextURL == "" {
 		return false, err
