@@ -23,6 +23,7 @@ type DependencyParser interface {
 }
 
 // Constraint represents one dependency/constraint.
+// TODO: add normalization logic to translate constraints from different parsers into semver compatible form
 type Constraint struct {
 	Name    string
 	Version string

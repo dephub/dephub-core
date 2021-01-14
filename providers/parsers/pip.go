@@ -59,7 +59,7 @@ func (c PipParser) Constraints(ctx context.Context) ([]Constraint, error) {
 // TODO: improve add additional signatures support.
 func parseRequirementsTxt(fileContent []byte) map[string]string {
 	var result map[string]string = make(map[string]string)
-	delimeters := []string{"~=", "===", "==", "!=", "<=", ">=", "<", ">"}
+	delimeters := []string{"===", "==", ">=", "<=", "<", ">", "~=", "!="}
 	scanner := bufio.NewScanner(bytes.NewReader(fileContent))
 	for scanner.Scan() {
 		if scanner.Text() == "" {
