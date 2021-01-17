@@ -1,3 +1,9 @@
+/*
+Package pip provides a client for using the PyPi pip public API.
+
+Usage:
+	todo:
+*/
 package pip
 
 import (
