@@ -33,14 +33,14 @@ func init() {
 //
 // If httpClient or URL is nil - default values will be used.
 // Pass URL only if you are sure that the address is compatible with PyPi public API.
-func NewPyPiClient(httpClient *http.Client, URL *url.URL) PyPiClient {
+func NewPyPiClient(httpClient *http.Client, URL *url.URL) *PyPiClient {
 	if URL == nil {
 		URL = pyPiBaseURL
 	}
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-	return PyPiClient{httpClient: httpClient, baseUrl: *URL}
+	return &PyPiClient{httpClient: httpClient, baseUrl: *URL}
 }
 
 // PyPiClient is used to communicate with PyPi compatible API service.
