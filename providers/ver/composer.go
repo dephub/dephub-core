@@ -12,9 +12,10 @@ Composer versions and constraints semantic parsing implementation.
 */
 
 // composerOprFunc represents composer constraint operator check function.
-// It reurns true if the version is satisfied by the constraint.
+// It returns true if the version is satisfied by the constraint.
 type composerOprFunc func(v Version, c composerConstraint) bool
 
+// composerConfig is used to store composer parser configuration.
 type composerConfig struct {
 	operators              map[string]composerOprFunc // List of supported constraints operators mapped to check functions (e.g. '>=')
 	versionRgx             string                     // Composer version regexp (e.g. v1.2.3-hello)

@@ -55,8 +55,9 @@ func TestComposerConstraintsAndVersion_MatchMethod(t *testing.T) {
 		Result     bool
 	}{
 		{">=v1.2.3,<=1.4.0||98.1.*", "1.2.3", true},
+		{">=1.2.3,<=v1.4.0|| 98.1.*", "1.3", true},
 		{">=1.2.3,<=1.4.0||98.1.*", "1.3.2", true},
-		{">=1.2.3,<=1.4.0||v98.1.*", "v98.1.376", true},
+		{">=1.2.3,<=1.4.0 ||v98.1.*", "v98.1.376", true},
 		{">=1.2.3,<=1.4.0||98.1.*", "v98.2.3", false},
 		{">=1.2.3,<=v1.4.0||98.1.*", "98.2", false},
 		// Equals, wildcards
@@ -71,6 +72,10 @@ func TestComposerConstraintsAndVersion_MatchMethod(t *testing.T) {
 		{"*", "3", true},
 		{"v3", "3.7.0", true},
 		// Not equals
+		{"!=3.7.*", "3.7.2", false},
+		{"!=3.7.*", "3.8.2", true},
+		{"!=3.*", "3.8.2", false},
+		{"!=3.*", "4.8.2", true},
 		{"!=3.7", "3.7", false},
 		{"!=3.7", "3.7.0", false},
 		{"!=3.7||3.7", "3.7.0", true},
@@ -89,6 +94,10 @@ func TestComposerConstraintsAndVersion_MatchMethod(t *testing.T) {
 		{">3.7.5", "3.7.5", false},
 		{">3.7.5", "3.7.4", false},
 		// Tilda tests (~)
+		{"~2.2", "2.3", true},
+		{"~2.2", "2.1", false},
+		{"~2.2", "3.0", false},
+		{"~1.4.5", "1.4.1", false},
 		{"~1.2", "1.2", true},
 		{"~1.2", "1.2.0", true},
 		{"~1.2", "1.2.1", true},
