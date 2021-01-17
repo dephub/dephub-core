@@ -36,7 +36,7 @@ type PackagistClient struct {
 // If a nil URL isprovided, default client is configured for default composer package repository (packagist.org).
 // Packagist is the main Composer repository. It aggregates public PHP packages installable with Composer.
 // You can get more info on Packagist and it's official API here: packagist.org/apidoc
-func NewClient(URL *url.URL, httpClient *http.Client) (*PackagistClient, error) {
+func NewClient(httpClient *http.Client, URL *url.URL) (*PackagistClient, error) {
 	// Generate Packagist.org default client if no URL provided.
 	if URL == nil {
 		var err error

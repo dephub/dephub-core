@@ -12,7 +12,7 @@ import (
 func getTestingClient(t *testing.T, srv *httptest.Server) *PackagistClient {
 	t.Helper()
 	url, _ := url.Parse(srv.URL)
-	cl, err := NewClient(url, srv.Client())
+	cl, err := NewClient(srv.Client(), url)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
