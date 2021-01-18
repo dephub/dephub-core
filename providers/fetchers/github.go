@@ -9,10 +9,15 @@ package fetchers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/google/go-github/v33/github"
+)
+
+var (
+	ErrFileNotFound = errors.New("dependency file not found")
 )
 
 // FileFetcher interface defines fetchers methods.
@@ -29,7 +34,7 @@ type ByteMapFetcher struct {
 func (sf ByteMapFetcher) FileContent(ctx context.Context, path string) ([]byte, error) {
 	v, ok := sf.Files[path]
 	if !ok {
-		return nil, fmt.Errorf("file not found")
+		return nil, ErrFileNotFound
 	}
 	return v, nil
 }
@@ -62,8 +67,11 @@ func (p GitHubFetcher) FileContent(ctx context.Context, path string) ([]byte, er
 		Ref: p.SHA,
 	}
 
-	rc, dc, _, err := p.githubClient.Repositories.GetContents(ctx, p.Owner, p.Repo, path, &opts)
+	rc, dc, resp, err := p.githubClient.Repositories.GetContents(ctx, p.Owner, p.Repo, path, &opts)
 	if err != nil {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrFileNotFound
+		}
 		return nil, fmt.Errorf("unable to load '%s' file from github: %w", path, err)
 	}
 

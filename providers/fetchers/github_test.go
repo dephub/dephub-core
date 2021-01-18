@@ -56,6 +56,22 @@ func TestFetchContentMethod_HttpNotFound(t *testing.T) {
 
 	fetcher := NewGitHubFetcher(cl, "test", "testing", "")
 	_, err := fetcher.FileContent(context.Background(), "test.txt")
+	if err == nil || err != ErrFileNotFound {
+		t.Error(err)
+	}
+}
+
+func TestFetchContentMethod_GitHubError(t *testing.T) {
+	cl := configureClient(t, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(http.StatusBadGateway)
+		_, _ = rw.Write([]byte(`{
+			"message": "Not Found",
+			"documentation_url": "https://docs.github.com/rest/reference/repos#get-repository-content"
+		  }`))
+	}))
+
+	fetcher := NewGitHubFetcher(cl, "test", "testing", "")
+	_, err := fetcher.FileContent(context.Background(), "test.txt")
 	if err == nil {
 		t.Error(err)
 	}
