@@ -39,6 +39,9 @@ func (c PipParser) Requirements(ctx context.Context) ([]Requirement, error) {
 func (c PipParser) Constraints(ctx context.Context) ([]Constraint, error) {
 	b, err := c.fetcher.FileContent(ctx, c.SourceName)
 	if err != nil {
+		if err == fetchers.ErrFileNotFound {
+			return nil, ErrFileNotFound
+		}
 		return nil, fmt.Errorf("unable to fetch python(pip) dependencies from the source: %w", err)
 	}
 

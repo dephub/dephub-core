@@ -34,6 +34,9 @@ type ComposerJson struct {
 func (c ComposerParser) Constraints(ctx context.Context) ([]Constraint, error) {
 	b, err := c.fetcher.FileContent(ctx, "composer.json")
 	if err != nil {
+		if err == fetchers.ErrFileNotFound {
+			return nil, ErrFileNotFound
+		}
 		return nil, fmt.Errorf("unable to fetch composer dependencies from the source: %w", err)
 	}
 
@@ -61,6 +64,9 @@ func (c ComposerParser) Constraints(ctx context.Context) ([]Constraint, error) {
 func (c ComposerParser) Requirements(ctx context.Context) ([]Requirement, error) {
 	b, err := c.fetcher.FileContent(ctx, "composer.lock")
 	if err != nil {
+		if err == fetchers.ErrFileNotFound {
+			return nil, ErrFileNotFound
+		}
 		return nil, fmt.Errorf("unable to fetch composer dependencies from the source: %w", err)
 	}
 

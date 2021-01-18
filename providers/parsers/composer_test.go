@@ -61,7 +61,7 @@ func TestComposerConstraintsMethod_Errors(t *testing.T) {
 		Files map[string][]byte
 		Err   string
 	}{
-		{"1", map[string][]byte{"blablabla": []byte("{}")}, "unable to fetch composer dependencies from the source"},
+		{"1", map[string][]byte{"blablabla": []byte("{}")}, ErrFileNotFound.Error()},
 		{"1", map[string][]byte{"composer.json": []byte("broken")}, "unable to parse composer file content"},
 	}
 
@@ -128,14 +128,13 @@ func TestComposerRequirementsMethod(t *testing.T) {
 }
 
 func TestComposerRequirementsMethod_Errors(t *testing.T) {
-
 	// Table test cases
 	cases := []struct {
 		Name  string
 		Files map[string][]byte
 		Err   string
 	}{
-		{"1", map[string][]byte{"blablabla": []byte("{}")}, "unable to fetch composer dependencies from the source"},
+		{"1", map[string][]byte{"blablabla": []byte("{}")}, ErrFileNotFound.Error()},
 		{"1", map[string][]byte{"composer.lock": []byte("broken")}, "unable to parse composer file content"},
 	}
 

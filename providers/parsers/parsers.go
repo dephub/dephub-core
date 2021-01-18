@@ -11,6 +11,11 @@ package parsers
 
 import (
 	"context"
+	"errors"
+)
+
+var (
+	ErrFileNotFound = errors.New("file not found")
 )
 
 // DependencyParser represents basic interface for parsers in this package.
