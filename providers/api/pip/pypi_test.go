@@ -50,7 +50,7 @@ func TestPyPiClientPackageMethod(t *testing.T) {
 
 	URL, _ := url.Parse(srv.URL)
 	pypi := NewPyPiClient(srv.Client(), URL)
-	pkg, err := pypi.Package(context.Background(), "package_name")
+	pkg, _, err := pypi.Package(context.Background(), "package_name")
 	if err != nil {
 		t.Fatalf("unexpected Release() error: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestPyPiClientReleaseMethod(t *testing.T) {
 
 	URL, _ := url.Parse(srv.URL)
 	pypi := NewPyPiClient(srv.Client(), URL)
-	pkg, err := pypi.Release(context.Background(), "package_name", "package_version")
+	pkg, _, err := pypi.Release(context.Background(), "package_name", "package_version")
 	if err != nil {
 		t.Fatalf("unexpected Release() error: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestPyPiClientRelease_Errors(t *testing.T) {
 			URL, _ := url.Parse(testCase.Server.URL)
 			pypi := NewPyPiClient(testCase.Server.Client(), URL)
 
-			pkg, err := pypi.Release(testCase.Ctx, testCase.PkgName, testCase.Version)
+			pkg, _, err := pypi.Release(testCase.Ctx, testCase.PkgName, testCase.Version)
 			if err == nil {
 				t.Error("expected error on empty name, got none")
 			}

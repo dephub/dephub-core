@@ -53,14 +53,14 @@ type PyPiClient struct {
 //
 // This method is almost identical to the 'release' one, so i'm keeping it for
 // resemblance with API routes and as a shortut for the Release()
-func (pc PyPiClient) Package(ctx context.Context, name string) (*PipPackage, error) {
+func (pc PyPiClient) Package(ctx context.Context, name string) (*PipPackage, *http.Response, error) {
 	return pc.Release(ctx, name, "")
 }
 
 // Package method is used to get information about packages, their versions and metadata.
-func (pc PyPiClient) Release(ctx context.Context, name, version string) (*PipPackage, error) {
+func (pc PyPiClient) Release(ctx context.Context, name, version string) (*PipPackage, *http.Response, error) {
 	if name == "" {
-		return nil, fmt.Errorf("pacakge name is required and can't be empty")
+		return nil, nil, fmt.Errorf("pacakge name is required and can't be empty")
 	}
 
 	var path string
@@ -72,27 +72,27 @@ func (pc PyPiClient) Release(ctx context.Context, name, version string) (*PipPac
 
 	req, err := http.NewRequestWithContext(ctx, "GET", path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a request: %w", err)
+		return nil, nil, fmt.Errorf("unable to create a request: %w", err)
 	}
 	resp, err := pc.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("unable to send the request: %w", err)
+		return nil, nil, fmt.Errorf("unable to send the request: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Pypi returned with !=200 status code")
+		return nil, resp, fmt.Errorf("Pypi returned with !=200 status code")
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read the response body: %w", err)
+		return nil, resp, fmt.Errorf("unable to read the response body: %w", err)
 	}
 
 	pp := PipPackage{}
 	if err = json.Unmarshal(body, &pp); err != nil {
-		return nil, fmt.Errorf("unable to parse the response body: %w", err)
+		return nil, resp, fmt.Errorf("unable to parse the response body: %w", err)
 	}
 
-	return &pp, nil
+	return &pp, resp, nil
 }
 
 // PipPackage represents full package metadata from PyPi.
