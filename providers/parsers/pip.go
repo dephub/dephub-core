@@ -65,10 +65,10 @@ func parseRequirementsTxt(fileContent []byte) map[string]string {
 	delimeters := []string{"===", "==", ">=", "<=", "<", ">", "~=", "!="}
 	scanner := bufio.NewScanner(bytes.NewReader(fileContent))
 	for scanner.Scan() {
-		if scanner.Text() == "" {
+		line := stripSpaces(scanner.Text()) // remove any spaces
+		if line == "" {
 			continue
 		}
-		line := stripSpaces(scanner.Text()) // remove any spaces
 		pkg := line
 		version := "*" // default version
 		// Ignore unsupported signatures

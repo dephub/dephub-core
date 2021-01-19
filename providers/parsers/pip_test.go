@@ -91,7 +91,11 @@ Mopidy-Dirble ~= 1.1        # Compatible release. Same as >= 1.1, == 1.*
 ###### Refer to other requirements files ######
 -r other-requirements.txt
 #
+   # heh
+# Empty line:
 
+# Line with spaces:
+    
 #
 ###### A particular file ######
 ./downloads/numpy-1.9.2-cp34-none-win32.whl
