@@ -1,10 +1,10 @@
 /*
-Package ver provides parsers for every supported dependency management versions and constraints.
+Package versioneer provides parsers for every supported dependency management versions and constraints.
 
 Usage:
 	todo:
 */
-package ver
+package versioneer
 
 // Version represents a fixed version (e.g. '1.0.3' or 'v3.2', depending on the implementation)
 type Version interface {

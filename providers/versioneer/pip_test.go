@@ -1,4 +1,4 @@
-package ver
+package versioneer
 
 import (
 	"fmt"
