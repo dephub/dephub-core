@@ -1,14 +1,19 @@
 # dephub-core
+
 Core Go libraries package used in DepHub project. Provide logic for managing (read-only, for now) dependencies for PHP and Python package managers.
+
+> :exclamation: The package is in active developement. Methods may and will change over time until the first major release (1.\*). Then the project will follow semantic versioning rules.
 
 ## Internal packages
 
 ### API wrappers:
+
 Helps you to communicate with different packages repositories.
 
 #### [Packagist.org](https://packagist.org) wrapper ([package README.md](/providers/api/packagist/README.md))
 
 Basic usage:
+
 ```go
 // import "github.com/dephub/dephub-core/providers/api/packagist"
 
@@ -58,11 +63,13 @@ fmt.Printf("Called %q url, Django author: %q!\n", response.Request.URL, pkg.Info
 ```
 
 ### Dependency files parsers ([package README.md](/providers/parsers/README.md)):
+
 Provide dependency files parsers (e.g. `composer.lock` or `requirements.txt`)
 
 #### [Composer](https://getcomposer.org) dependency parser
 
 Basic usage:
+
 ```go
 // 	import "github.com/dephub/dephub-core/providers/fetchers"
 // 	import "github.com/dephub/dephub-core/providers/parsers"
@@ -93,6 +100,7 @@ fmt.Printf("Random composer.json package %q in 'laravel' repository has %q const
 #### [PIP](https://pypi.org/project/pip) dependency parser
 
 Basic usage:
+
 ```go
 // 	import "github.com/dephub/dephub-core/providers/fetchers"
 // 	import "github.com/dephub/dephub-core/providers/parsers"
