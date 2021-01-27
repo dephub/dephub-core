@@ -433,7 +433,7 @@ func TestMetaMethod(t *testing.T) {
 	cl := getTestingClient(t, srv)
 
 	want := PackagesMeta{Packages: map[string]PackageMeta{"joshdifabio/composer": {
-		"dev-async": VersionMeta{
+		VersionMeta{
 			Name:              "joshdifabio/composer",
 			Description:       "Composer helps you declare, manage and install dependencies of PHP projects, ensuring you have the right stack everywhere.",
 			Keywords:          []string{"package"},
@@ -457,7 +457,7 @@ func TestMetaMethod(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want.Packages["joshdifabio/composer"]["dev-async"].Description != res.Packages["joshdifabio/composer"]["dev-async"].Description {
+	if want.Packages["joshdifabio/composer"][0].Description != res.Packages["joshdifabio/composer"][0].Description {
 		t.Error("unexpected struct")
 	}
 }

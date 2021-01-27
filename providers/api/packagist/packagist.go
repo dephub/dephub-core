@@ -179,13 +179,47 @@ func (c PackagistClient) Search(ctx context.Context, q string, opts *SearchOptio
 }
 
 // PackagesMeta represents meta response object.
-// todo: this response is actually unpredictable (the nature of it is actualy user typed configs)
 type PackagesMeta struct {
 	Packages map[string]PackageMeta `json:"packages"`
 }
 
-// PackageMeta represents packages container.
-type PackageMeta map[string]VersionMeta
+// PackageMeta represents packages container (it contains slice of versions).
+//
+// Original packagist API returns a map, but, considering all benifits of JSON ordered key->value pairs
+// we decided to keep the original order, you can find this key value (from packagist API key response)
+// in VersionMeta.Version.
+type PackageMeta []VersionMeta
+
+// UnmarshalJSON is used in unmarshalling process to keep the original versions order.
+//
+// We basically use custom decoder to decode and transform key=>obj values into slice values.
+func (pms *PackageMeta) UnmarshalJSON(data []byte) error {
+	if len(data) < 1 {
+		return fmt.Errorf("invalid slice length %d", len(data))
+	}
+
+	d := json.NewDecoder(strings.NewReader(string(data)))
+	t, err := d.Token()
+	if err != nil || t != json.Delim('{') {
+		return fmt.Errorf("PackageMeta custom unmarshaller failed: %w", err)
+	}
+
+	var result []VersionMeta
+	for d.More() {
+		_, err := d.Token()
+		if err != nil {
+			return fmt.Errorf("PackageMeta custom unmarshaller failed: %w", err)
+		}
+		var v VersionMeta
+		if err := d.Decode(&v); err != nil {
+			return fmt.Errorf("PackageMeta custom unmarshaller failed decoding token: %w", err)
+		}
+		result = append(result, v)
+	}
+
+	*pms = result
+	return nil
+}
 
 // VersionMeta represents versions container.
 type VersionMeta struct {
