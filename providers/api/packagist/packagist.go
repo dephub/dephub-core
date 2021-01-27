@@ -7,6 +7,7 @@ Usage:
 package packagist
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -198,7 +199,7 @@ func (pms *PackageMeta) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid slice length %d", len(data))
 	}
 
-	d := json.NewDecoder(strings.NewReader(string(data)))
+	d := json.NewDecoder(bytes.NewReader(data))
 	t, err := d.Token()
 	if err != nil || t != json.Delim('{') {
 		return fmt.Errorf("PackageMeta custom unmarshaller failed: %w", err)
