@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/dephub/dephub-core/providers/fetchers"
@@ -70,24 +71,24 @@ var fileMapMockData = map[string][]byte{
 
 func TestMemoryDependencySource(t *testing.T) {
 	depSource := NewMemorySource(fileMapMockData)
-	expPipCnsts := map[string]string{
-		"Django":                   "==1.11.15",
-		"django-phonenumber-field": "==1.1.0",
-		"easy-thumbnails":          "==2.4.2",
-		"phonenumberslite":         "==8.2.0",
-		"Pillow":                   "==4.3.0",
-		"django-ckeditor":          "==5.3.0",
+	expPipCnsts := []Constraint{
+		{"Django", "==1.11.15"},
+		{"django-phonenumber-field", "==1.1.0"},
+		{"easy-thumbnails", "==2.4.2"},
+		{"phonenumberslite", "==8.2.0"},
+		{"Pillow", "==4.3.0"},
+		{"django-ckeditor", "==5.3.0"},
 	}
-	expComposerCnsts := map[string]string{
-		"php":                                 ">=7.1.3",
-		"barryvdh/laravel-debugbar":           "^3.2",
-		"cartalyst/sentinel":                  "2.0.*",
-		"davejamesmiller/laravel-breadcrumbs": "^3.0",
+	expComposerCnsts := []Constraint{
+		{"php", ">=7.1.3"},
+		{"barryvdh/laravel-debugbar", "^3.2"},
+		{"cartalyst/sentinel", "2.0.*"},
+		{"davejamesmiller/laravel-breadcrumbs", "^3.0"},
 	}
-	expComposerReqs := map[string]string{
-		"aws/aws-sdk-php":           "3.69.16",
-		"barryvdh/laravel-debugbar": "v3.2.0",
-		"cartalyst/sentinel":        "v2.0.17",
+	expComposerReqs := []Requirement{
+		{"aws/aws-sdk-php", "3.69.16", false},
+		{"barryvdh/laravel-debugbar", "v3.2.0", true},
+		{"cartalyst/sentinel", "v2.0.17", true},
 	}
 
 	pipCnsts, err := depSource.Constraints(context.Background(), PIPType)
@@ -105,6 +106,18 @@ func TestMemoryDependencySource(t *testing.T) {
 	composerReqs, err := depSource.Requirements(context.Background(), ComposerType)
 	if err != nil {
 		t.Fatalf("unexpected error on composer memory source requirements: %v", err)
+	}
+
+	// Sort all results before DeepEqual test
+	for _, sl := range [][]Constraint{pipCnsts, expPipCnsts, composerCnsts, expComposerCnsts} {
+		sort.Slice(sl, func(i, j int) bool {
+			return sl[i].Name > sl[j].Name
+		})
+	}
+	for _, sl := range [][]Requirement{composerReqs, expComposerReqs} {
+		sort.Slice(sl, func(i, j int) bool {
+			return sl[i].Name > sl[j].Name
+		})
 	}
 
 	if !reflect.DeepEqual(pipCnsts, expPipCnsts) {
@@ -187,24 +200,24 @@ func TestGitDependencySource_Constructor_AddrErrors(t *testing.T) {
 func TestGitDependencySource_Methods(t *testing.T) {
 	gitDepSource := GitDependencySource{fetcher: fetchers.ByteMapFetcher{Files: fileMapMockData}}
 
-	expPipCnsts := map[string]string{
-		"Django":                   "==1.11.15",
-		"django-phonenumber-field": "==1.1.0",
-		"easy-thumbnails":          "==2.4.2",
-		"phonenumberslite":         "==8.2.0",
-		"Pillow":                   "==4.3.0",
-		"django-ckeditor":          "==5.3.0",
+	expPipCnsts := []Constraint{
+		{"Django", "==1.11.15"},
+		{"django-phonenumber-field", "==1.1.0"},
+		{"easy-thumbnails", "==2.4.2"},
+		{"phonenumberslite", "==8.2.0"},
+		{"Pillow", "==4.3.0"},
+		{"django-ckeditor", "==5.3.0"},
 	}
-	expComposerCnsts := map[string]string{
-		"php":                                 ">=7.1.3",
-		"barryvdh/laravel-debugbar":           "^3.2",
-		"cartalyst/sentinel":                  "2.0.*",
-		"davejamesmiller/laravel-breadcrumbs": "^3.0",
+	expComposerCnsts := []Constraint{
+		{"php", ">=7.1.3"},
+		{"barryvdh/laravel-debugbar", "^3.2"},
+		{"cartalyst/sentinel", "2.0.*"},
+		{"davejamesmiller/laravel-breadcrumbs", "^3.0"},
 	}
-	expComposerReqs := map[string]string{
-		"aws/aws-sdk-php":           "3.69.16",
-		"barryvdh/laravel-debugbar": "v3.2.0",
-		"cartalyst/sentinel":        "v2.0.17",
+	expComposerReqs := []Requirement{
+		{"aws/aws-sdk-php", "3.69.16", false},
+		{"barryvdh/laravel-debugbar", "v3.2.0", true},
+		{"cartalyst/sentinel", "v2.0.17", true},
 	}
 
 	pipCnsts, err := gitDepSource.Constraints(context.Background(), PIPType)
@@ -222,6 +235,18 @@ func TestGitDependencySource_Methods(t *testing.T) {
 	composerReqs, err := gitDepSource.Requirements(context.Background(), ComposerType)
 	if err != nil {
 		t.Fatalf("unexpected error on composer memory source requirements: %v", err)
+	}
+
+	// Sort all results before DeepEqual test
+	for _, sl := range [][]Constraint{pipCnsts, expPipCnsts, composerCnsts, expComposerCnsts} {
+		sort.Slice(sl, func(i, j int) bool {
+			return sl[i].Name > sl[j].Name
+		})
+	}
+	for _, sl := range [][]Requirement{composerReqs, expComposerReqs} {
+		sort.Slice(sl, func(i, j int) bool {
+			return sl[i].Name > sl[j].Name
+		})
 	}
 
 	if !reflect.DeepEqual(pipCnsts, expPipCnsts) {

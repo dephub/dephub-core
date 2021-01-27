@@ -30,6 +30,20 @@ const (
 	PIPType = DepType("pip")
 )
 
+// Constraint represents one dependency/constraint.
+type Constraint struct {
+	Name    string
+	Version string
+}
+
+// Requirement represents locked dependency.
+type Requirement struct {
+	Name    string
+	Version string
+	// Base indicates if the requirement is base (top level requirement, for example from composer.json)
+	Base bool
+}
+
 // gitRepoRgx is used to parse repository info from GIT-compatible address string.
 //
 // Examples matching the regexp:
@@ -52,13 +66,9 @@ func init() {
 // provides convinient interface to fetch packages information.
 type DependencySource interface {
 	// Requirements returns list of project's locked dependencies versions (if any).
-	//
-	// Return value is a 'pkg_name:version' map.
-	Requirements(ctx context.Context, typ DepType) (map[string]string, error)
+	Requirements(ctx context.Context, typ DepType) ([]Requirement, error)
 	// Constraints returns list of project's dependencies constraints.
-	//
-	// Return value is a 'pkg_name:constraint' map.
-	Constraints(ctx context.Context, typ DepType) (map[string]string, error)
+	Constraints(ctx context.Context, typ DepType) ([]Constraint, error)
 }
 
 func NewMemorySource(files map[string][]byte) DependencySource {
@@ -74,14 +84,14 @@ type MemoryDependencySource struct {
 // Requirements returns list of project's locked dependencies versions (if any).
 //
 // Return value is a 'pkg_name:version' map.
-func (ldds MemoryDependencySource) Requirements(ctx context.Context, typ DepType) (map[string]string, error) {
+func (ldds MemoryDependencySource) Requirements(ctx context.Context, typ DepType) ([]Requirement, error) {
 	return parseRequirements(ctx, typ, ldds.fetcher)
 }
 
 // Constraints returns list of project's dependencies constraints.
 //
 // Return value is a 'pkg_name:constraint' map.
-func (ldds MemoryDependencySource) Constraints(ctx context.Context, typ DepType) (map[string]string, error) {
+func (ldds MemoryDependencySource) Constraints(ctx context.Context, typ DepType) ([]Constraint, error) {
 	return parseConstraints(ctx, typ, ldds.fetcher)
 }
 
@@ -121,37 +131,37 @@ type GitDependencySource struct {
 // Requirements returns list of project's locked dependencies versions (if any).
 //
 // Return value is a 'pkg_name:version' map.
-func (gds GitDependencySource) Requirements(ctx context.Context, typ DepType) (map[string]string, error) {
+func (gds GitDependencySource) Requirements(ctx context.Context, typ DepType) ([]Requirement, error) {
 	return parseRequirements(ctx, typ, gds.fetcher)
 }
 
 // Constraints returns list of project's dependencies constraints.
 //
 // Return value is a 'pkg_name:constraint' map.
-func (gds GitDependencySource) Constraints(ctx context.Context, typ DepType) (map[string]string, error) {
+func (gds GitDependencySource) Constraints(ctx context.Context, typ DepType) ([]Constraint, error) {
 	return parseConstraints(ctx, typ, gds.fetcher)
 }
 
-func parseRequirements(ctx context.Context, typ DepType, fetcher fetchers.FileFetcher) (map[string]string, error) {
+func parseRequirements(ctx context.Context, typ DepType, fetcher fetchers.FileFetcher) ([]Requirement, error) {
 	csts, err := solveParser(typ, fetcher).Requirements(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result := map[string]string{}
+	result := []Requirement{}
 	for _, cst := range csts {
-		result[cst.Name] = cst.Version
+		result = append(result, Requirement(cst))
 	}
 	return result, nil
 }
 
-func parseConstraints(ctx context.Context, typ DepType, fetcher fetchers.FileFetcher) (map[string]string, error) {
+func parseConstraints(ctx context.Context, typ DepType, fetcher fetchers.FileFetcher) ([]Constraint, error) {
 	csts, err := solveParser(typ, fetcher).Constraints(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result := map[string]string{}
+	result := []Constraint{}
 	for _, cst := range csts {
-		result[cst.Name] = cst.Version
+		result = append(result, Constraint(cst))
 	}
 	return result, nil
 }
