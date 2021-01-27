@@ -153,6 +153,10 @@ func NewComposerVersion(value string) (Version, error) {
 		return nil, fmt.Errorf("version '%s' is not supported", value)
 	}
 
+	if matches[5] != "" || strings.Contains(value, ".x") || strings.Contains(value, ".x-dev") {
+		return nil, fmt.Errorf("releases/branches '%s' not supported yet", value)
+	}
+
 	var temp int64
 	var err error
 	if temp, err = strconv.ParseInt(matches[1], 10, 0); err != nil {
