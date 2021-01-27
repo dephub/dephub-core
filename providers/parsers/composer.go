@@ -46,15 +46,13 @@ func (c ComposerParser) Constraints(ctx context.Context) ([]Constraint, error) {
 		return nil, fmt.Errorf("unable to parse composer file content: %w", err)
 	}
 
-	res := make([]Constraint, len(composer.Require))
+	res := make([]Constraint, 0, len(composer.Require))
 
-	idx := 0
 	for dep, ver := range composer.Require {
-		res[idx] = Constraint{
+		res = append(res, Constraint{
 			Name:    dep,
 			Version: ver,
-		}
-		idx++
+		})
 	}
 
 	return res, nil
@@ -62,6 +60,16 @@ func (c ComposerParser) Constraints(ctx context.Context) ([]Constraint, error) {
 
 // Requirements method returns locked packages versions from composer.lock.
 func (c ComposerParser) Requirements(ctx context.Context) ([]Requirement, error) {
+	constraints, err := c.Constraints(ctx)
+	if err != nil && err != ErrFileNotFound {
+		return nil, err
+	}
+
+	basePkgs := map[string]struct{}{}
+	for _, cn := range constraints {
+		basePkgs[cn.Name] = struct{}{}
+	}
+
 	b, err := c.fetcher.FileContent(ctx, "composer.lock")
 	if err != nil {
 		if err == fetchers.ErrFileNotFound {
@@ -74,6 +82,12 @@ func (c ComposerParser) Requirements(ctx context.Context) ([]Requirement, error)
 	err = json.Unmarshal(b, &composer)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse composer file content: %w", err)
+	}
+
+	for idx, pkg := range composer.Packages {
+		if _, ok := basePkgs[pkg.Name]; ok {
+			composer.Packages[idx].Base = true
+		}
 	}
 
 	return composer.Packages, nil
