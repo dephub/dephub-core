@@ -7,6 +7,7 @@ Usage:
 package pip
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -51,13 +52,15 @@ type PyPiClient struct {
 
 // Package method is used to get information about packages, their versions and metadata.
 //
-// This method is almost identical to the 'release' one, so i'm keeping it for
+// This method is identical to the 'release' one, so i'm keeping it for
 // resemblance with API routes and as a shortut for the Release()
 func (pc PyPiClient) Package(ctx context.Context, name string) (*PipPackage, *http.Response, error) {
 	return pc.Release(ctx, name, "")
 }
 
 // Package method is used to get information about packages, their versions and metadata.
+//
+// Version argument is optional.
 func (pc PyPiClient) Release(ctx context.Context, name, version string) (*PipPackage, *http.Response, error) {
 	if name == "" {
 		return nil, nil, fmt.Errorf("pacakge name is required and can't be empty")
@@ -97,9 +100,9 @@ func (pc PyPiClient) Release(ctx context.Context, name, version string) (*PipPac
 
 // PipPackage represents full package metadata from PyPi.
 type PipPackage struct {
-	Info       PipPackageInfo        `json:"info"`
-	LastSerial int                   `json:"last_serial"`
-	Releases   PipPackageReleaseList `json:"releases"`
+	Info       PipPackageInfo     `json:"info"`
+	LastSerial int                `json:"last_serial"`
+	Releases   PipPackageVersions `json:"releases"`
 	Urls       []struct {
 		CommentText string `json:"comment_text"`
 		Digests     struct {
@@ -162,14 +165,55 @@ type PipPackageInfo struct {
 	YankedReason   interface{} `json:"yanked_reason"`
 }
 
-// PipPackageInfo represents package releases list, where map key is version and value is array of releases.
-type PipPackageReleaseList map[string][]PipPackageRelease
+// PipPackageVersion represents package releases list, where map key is version and value is array of releases.
+type PipPackageVersion struct {
+	Version  string
+	Releases []PipPackageRelease
+}
+
+// PipPackageVersions represents package versions list.
+type PipPackageVersions []PipPackageVersion
+
+// UnmarshalJSON is used in unmarshalling process to keep the original versions order.
+//
+// We basically use custom decoder to decode and transform key=>obj values into slice values.
+func (pms *PipPackageVersions) UnmarshalJSON(data []byte) error {
+	if len(data) < 1 {
+		return fmt.Errorf("invalid slice length %d", len(data))
+	}
+
+	d := json.NewDecoder(bytes.NewReader(data))
+	t, err := d.Token()
+	if err != nil || t != json.Delim('{') {
+		return fmt.Errorf("PackageMeta custom unmarshaller failed: %w", err)
+	}
+
+	var result PipPackageVersions
+	for d.More() {
+		t, err := d.Token()
+		if err != nil {
+			return fmt.Errorf("PackageMeta custom unmarshaller failed: %w", err)
+		}
+
+		var v PipPackageVersion
+		v.Version = t.(string)
+		if err := d.Decode(&v.Releases); err != nil {
+			return fmt.Errorf("PackageMeta custom unmarshaller failed decoding token: %w", err)
+		}
+
+		result = append(result, v)
+	}
+
+	*pms = result
+	return nil
+}
 
 // PipPackageRelease represents one concrete release information block.
 type PipPackageRelease struct {
-	Comment  string `json:"comment_text"`
-	Filename string `json:"filename"`
-	Digests  struct {
+	BaseVersion string `json:"base_version"` // Release version, translated from API result key
+	Comment     string `json:"comment_text"`
+	Filename    string `json:"filename"`
+	Digests     struct {
 		Md5    string `json:"md5"`
 		Sha256 string `json:"sha256"`
 	} `json:"digests"`
