@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func getTestingClient(t *testing.T, srv *httptest.Server) *PackagistClient {
+func getTestingClient(t *testing.T, srv *httptest.Server) Client {
 	t.Helper()
 	url, _ := url.Parse(srv.URL)
 	cl, err := NewClient(srv.Client(), url)
@@ -23,10 +23,11 @@ func getTestingClient(t *testing.T, srv *httptest.Server) *PackagistClient {
 // func testTableTest
 
 func TestNewClientMethod(t *testing.T) {
-	cl, err := NewClient(nil, nil)
+	clc, err := NewClient(nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	cl := clc.(*PackagistClient)
 	if cl.baseURL.String() != packagistHostname {
 		t.Errorf("nil client url is incorrect, expected '%s', got '%s'", packagistHostname, cl.baseURL.String())
 	}
@@ -102,7 +103,8 @@ func TestHttpErrorResponse(t *testing.T) {
 	}
 
 	var tst interface{}
-	_, err = parseResponse(cl, req, tst)
+	pcl := cl.(*PackagistClient)
+	_, err = pcl.parseResponse(req, tst)
 
 	if err == nil {
 		t.Error("expected 404 error, got none")
@@ -116,7 +118,8 @@ func TestReqErrorResponse(t *testing.T) {
 	req := http.Request{}
 
 	var tst interface{}
-	_, err := parseResponse(cl, &req, tst)
+	pcl := cl.(*PackagistClient)
+	_, err := pcl.parseResponse(&req, tst)
 
 	if err == nil {
 		t.Error("expected request error, got none")
@@ -297,13 +300,13 @@ func TestSearchNextMethod(t *testing.T) {
 	}},
 		Total:   2,
 		NextURL: "",
-		client:  *cl,
+		client:  cl,
 	}
 
 	foundObj := &FoundSearch{Results: []FoundPackage{},
 		Total:   2,
 		NextURL: srv.URL + "/search.json?page=1&q=hello",
-		client:  *cl,
+		client:  cl,
 		q:       "hello",
 	}
 
@@ -319,7 +322,7 @@ func TestSearchNextMethod(t *testing.T) {
 		t.Error("unexpected response")
 	}
 
-	if foundObj.NextURL != expectedResult.NextURL || foundObj.Total != expectedResult.Total || foundObj.client != expectedResult.client {
+	if foundObj.NextURL != expectedResult.NextURL || foundObj.Total != expectedResult.Total {
 		t.Error("next object")
 	}
 

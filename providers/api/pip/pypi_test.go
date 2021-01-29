@@ -11,7 +11,9 @@ import (
 )
 
 func TestPyPiNewClientMethod(t *testing.T) {
-	pypi := NewPyPiClient(nil, nil)
+	cl := NewPyPiClient(nil, nil)
+	pypi := cl.(*PyPiClient)
+
 	if pypi.httpClient != http.DefaultClient {
 		t.Errorf("default httpClient is not set on NewPyPiClient instance")
 	}
@@ -24,7 +26,8 @@ func TestPyPiNewClientMethod(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected test url parse error: %v", err)
 	}
-	pypi = NewPyPiClient(expClient, expUrl)
+	cl = NewPyPiClient(expClient, expUrl)
+	pypi = cl.(*PyPiClient)
 	if pypi.httpClient != expClient {
 		t.Errorf("default httpClient is not set on NewPyPiClient instance")
 	}

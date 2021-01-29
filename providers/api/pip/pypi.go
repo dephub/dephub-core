@@ -30,11 +30,25 @@ func init() {
 	pyPiBaseURL, _ = url.Parse(pyPiHostname)
 }
 
+// Client represents packagist api client interface.
+type Client interface {
+	// Package method is used to get information about packages, their versions and metadata.
+	//
+	// This method is identical to the 'release' one, so i'm keeping it for
+	// resemblance with API routes and as a shortut for the Release()
+	Package(ctx context.Context, name string) (*PipPackage, *http.Response, error)
+
+	// Package method is used to get information about packages, their versions and metadata.
+	//
+	// Version argument is optional.
+	Release(ctx context.Context, name, version string) (*PipPackage, *http.Response, error)
+}
+
 // NewPyPiClient constructs a new PyPiClient
 //
 // If httpClient or URL is nil - default values will be used.
 // Pass URL only if you are sure that the address is compatible with PyPi public API.
-func NewPyPiClient(httpClient *http.Client, URL *url.URL) *PyPiClient {
+func NewPyPiClient(httpClient *http.Client, URL *url.URL) Client {
 	if URL == nil {
 		URL = pyPiBaseURL
 	}

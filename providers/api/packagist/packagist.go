@@ -26,6 +26,41 @@ import (
 // You can get more info on Packagist and it's official API here: packagist.org/apidoc
 var packagistHostname string = "https://packagist.org"
 
+// Client represents packagist api client interface.
+type Client interface {
+	// List method lists all packages from the repository.
+	//
+	// ! Calling this method without options will load EVERY
+	// package from the specified repository, the size of the
+	// response will usually be huge !
+	List(ctx context.Context, opts *ListOptions) (*PackagesList, *http.Response, error)
+
+	// Search methods is used to search for a specific packages.
+	Search(ctx context.Context, q string, opts *SearchOptions) (*FoundSearch, *http.Response, error)
+
+	// Data methods is used to search for package metadata.
+	//
+	// This method, in comparison to Meta(), gives you all the infos packagist.org have
+	// including downloads, dependents count, github info, etc.
+	//
+	// Also, it is important to note that the endpoint this method calls is pointing to
+	// dynamically generated file so for performance reason packagist.org caches the responses
+	// for twelve hours. As such if the static Meta() is enough use it instead.
+	Data(ctx context.Context, vendor, pkg string) (*PackageData, *http.Response, error)
+
+	// Meta methods is used to search for package metadata.
+	//
+	// This API endpoint also contains other packages listed as 'replace' for the main one.
+	Meta(ctx context.Context, vendor, pkg string) (*PackagesMeta, *http.Response, error)
+
+	// SecAdvisories method fetches known security vulnerabilities for specified packages.
+	// Names in packages parameter should be formatted like this: '{vendor}/{package}'.
+	SecAdvisories(ctx context.Context, packages []string) (*SecAdvisories, *http.Response, error)
+
+	// Stats method returns simple global packagist statistics.
+	Stats(ctx context.Context) (*PackagesStats, *http.Response, error)
+}
+
 // PackagistClient is used to send API requests to package repository
 type PackagistClient struct {
 	baseURL    url.URL
@@ -37,7 +72,7 @@ type PackagistClient struct {
 // If a nil URL isprovided, default client is configured for default composer package repository (packagist.org).
 // Packagist is the main Composer repository. It aggregates public PHP packages installable with Composer.
 // You can get more info on Packagist and it's official API here: packagist.org/apidoc
-func NewClient(httpClient *http.Client, URL *url.URL) (*PackagistClient, error) {
+func NewClient(httpClient *http.Client, URL *url.URL) (Client, error) {
 	// Generate Packagist.org default client if no URL provided.
 	if URL == nil {
 		var err error
@@ -85,7 +120,7 @@ func (c PackagistClient) List(ctx context.Context, opts *ListOptions) (*Packages
 
 	var pl PackagesList
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -103,7 +138,7 @@ type FoundSearch struct {
 	// Options used to fetch original data.
 	opts SearchOptions
 	// Client used to fetch original data.
-	client PackagistClient
+	client Client
 }
 
 // Next loads next page (if exists) and mutates existing struct fields with new data.
@@ -172,7 +207,7 @@ func (c PackagistClient) Search(ctx context.Context, q string, opts *SearchOptio
 		pl.opts = *opts
 	}
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -272,7 +307,7 @@ func (c PackagistClient) Meta(ctx context.Context, vendor, pkg string) (*Package
 
 	var pl PackagesMeta
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -335,7 +370,7 @@ func (c PackagistClient) Data(ctx context.Context, vendor, pkg string) (*Package
 
 	var pl PackageData
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -361,7 +396,7 @@ func (c PackagistClient) Stats(ctx context.Context) (*PackagesStats, *http.Respo
 
 	var pl PackagesStats
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -438,7 +473,7 @@ func (c PackagistClient) SecAdvisories(ctx context.Context, packages []string) (
 
 	var pl SecAdvisories
 	var r *http.Response
-	if r, err = parseResponse(&c, req, &pl); err != nil {
+	if r, err = c.parseResponse(req, &pl); err != nil {
 		return nil, nil, err
 	}
 
@@ -452,7 +487,7 @@ type errorResponse struct {
 }
 
 // parseResponse is used to execute the request and unmarshall the response to dt
-func parseResponse(c *PackagistClient, req *http.Request, dt interface{}) (r *http.Response, err error) {
+func (c *PackagistClient) parseResponse(req *http.Request, dt interface{}) (r *http.Response, err error) {
 	if r, err = c.HttpClient.Do(req); err != nil {
 		return nil, fmt.Errorf("unable to send a request: %w", err)
 	}
