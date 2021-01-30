@@ -1,131 +1,67 @@
-# dephub-core
+# DepHub Core
 
-Core Go libraries package used in DepHub project. Provide logic for managing (read-only, for now) dependencies for PHP and Python package managers.
+Set of libraries, providing functionality for managing (read-only) dependencies for PHP and Python package managers.
 
 > :exclamation: The package is in active developement. Methods may and will change over time until the first major release (1.\*). Then the project will follow semantic versioning rules.
 
-## Internal packages
+## Packages
 
-### API wrappers:
+There are several useful packages included:
 
-Helps you to communicate with different packages repositories.
+- API wrappers for fetching additional information on packages ([package README.md](/providers/api/README.md)):
+  - Packagist API
+  - PyPi API
+- Source fetchers ([package README.md](/providers/fetchers/README.md))
+- Dependency files parsers ([package README.md](/providers/parsers/README.md))
 
-#### [Packagist.org](https://packagist.org) wrapper ([package README.md](/providers/api/packagist/README.md))
+## Main `dephub` module
 
-Basic usage:
+This module provides functionality for fetching, parsing and working with different package managers files and services.
+
+### Fetching dependency managers files
+
+Dependency source represents abstraction over package manager source files and provides convinient interface to fetch packages information.
+
+Usage example (retrieving `Composer` constraints list):
 
 ```go
-// import "github.com/dephub/dephub-core/providers/api/packagist"
+// import "github.com/dephub/dephub-core/dephub"
 
-// Create new packagist api client, you can pass your httpClient.
-p, err := packagist.NewClient(nil, nil)
+// We should define the source where our dep files are stored, in this example we will use the Git source.
+// The last argument can be blank.
+source, err := dephub.NewGitSource(http.DefaultClient, "git@github.com:laravel/framework.git", "master")
 if err != nil {
     panic(err)
 }
 
-// Options are used when there are optional parameters,
-// you can pass nil if you dont need any.
-options := &packagist.SearchOptions{
-    Page: 3, // Optional page parameter for packagist search request
-}
-
-// Search query is 'laravel', context is usefull for cancelation,
-// provide context.Background() if you dont need it.
-results, response, err := p.Search(context.Background(), "laravel", options)
+// Get all the constraints for Composer from the source.
+constraints, err := source.Constraints(context.Background(), dephub.ComposerType)
 if err != nil {
     panic(err)
 }
 
-// You can use actual packagist response as you wish, usually you want to just omit it with _
-fmt.Printf("Called %q url, got %d search results!\n", response.Request.URL, results.Total)
-
-// output: Called "https://packagist.org/search.json?page=3&q=laravel" url, got 47071 search results!
+fmt.Printf("Random constraint from \"laravel/framework\" composer.json: %q:%q \n", constraints[0].Name, constraints[0].Version)
+// output: Random constraint from "laravel/framework" composer.json: "psr/simple-cache":"^1.0"
 ```
 
-##### [PyPi.org](https://pypi.org) wrapper ([package README.md](/providers/api/pip/README.md))
+### Packages updates checking
+
+Dependency checkers allow you to check constraints and requirements and get new/updatable versions information for them.
+
+Usage example:
 
 ```go
-// import "github.com/dephub/dephub-core/providers/api/pip"
+source, _ := dephub.NewGitSource(http.DefaultClient, "git@github.com:laravel/framework.git", "master")
+constraints, _ := source.Constraints(context.Background(), dephub.ComposerType)
 
-// Create new PIP api client, you can pass your httpClient.
-pip := pip.NewPyPiClient(http.DefaultClient, nil)
-
-// Get all releases for Django 3.0.11
-pkg, response, err := pip.Release(context.Background(), "Django", "3.0.11")
+updatesChecker := dephub.NewComposerUpdatesChecker(http.DefaultClient)
+incompatibleOnly := true
+updates, err := updatesChecker.LastUpdates(context.Background(), constraints, incompatibleOnly)
 if err != nil {
-	panic(err)
+    panic(err)
 }
 
-// You can use actual PyPi response as you wish, usually you want to just omit it with _
-fmt.Printf("Called %q url, Django author: %q!\n", response.Request.URL, pkg.Info.Author)
-
-// output: Called "https://pypi.org/pypi/Django/3.0.11/json" url, Django author: "Django Software Foundation"!
+firstUpdate := updates[0]
+fmt.Printf("Package %q (current constraint %q) has new version %q, get info on %q", firstUpdate.Name, firstUpdate.CurrentConstraint, firstUpdate.Version, firstUpdate.URL)
+// output: Package "monolog/monolog" (current constraint "^2.0") has new version "2.2.0", get info on "https://github.com/Seldaek/monolog.git"
 ```
-
-### Dependency files parsers ([package README.md](/providers/parsers/README.md)):
-
-Provide dependency files parsers (e.g. `composer.lock` or `requirements.txt`)
-
-#### [Composer](https://getcomposer.org) dependency parser
-
-Basic usage:
-
-```go
-// 	import "github.com/dephub/dephub-core/providers/fetchers"
-// 	import "github.com/dephub/dephub-core/providers/parsers"
-
-// Each parser requires a source from where they fetch dependency files.
-fileFetcher := fetchers.NewGitHubFetcher(http.DefaultClient, "laravel", "framework", "master")
-// Create new composer dependencies parser.
-depParser := parsers.NewComposerParser(fileFetcher)
-// Get constraints (composer.json require packages info),
-// you can get composer.lock packages by calling Requirements method.
-constraints, err := depParser.Constraints(context.Background())
-if err != nil {
-	panic(err)
-}
-
-// It is possible we could get zero constraints if composer.json has none
-constraint := parsers.Constraint{Name: "NOT_FOUND"}
-for _, cnst := range constraints {
-	constraint = cnst
-	break
-}
-
-fmt.Printf("Random composer.json package %q in 'laravel' repository has %q constraint\n", constraint.Name, constraint.Version)
-
-// output: Random composer.json package "league/flysystem" in 'laravel' repository has "^2.0" constraint
-```
-
-#### [PIP](https://pypi.org/project/pip) dependency parser
-
-Basic usage:
-
-```go
-// 	import "github.com/dephub/dephub-core/providers/fetchers"
-// 	import "github.com/dephub/dephub-core/providers/parsers"
-
-// Each parser requires a source from where they fetch dependency files.
-fileFetcher := fetchers.NewGitHubFetcher(http.DefaultClient, "pallets", "flask", "master")
-
-// Create new PIP dependencies parser, you can omit the filename, default is 'requirements.txt'.
-depParser := parsers.NewPipParser(fileFetcher, "requirements/dev.txt")
-// Parse constraints from dev flask file.
-constraints, err := depParser.Constraints(context.Background())
-if err != nil {
-	panic(err)
-}
-
-// It is possible we could get zero constraints if file is empty
-constraint := parsers.Constraint{Name: "NOT_FOUND"}
-for _, cnst := range constraints {
-	constraint = cnst
-	break
-}
-
-fmt.Printf("Random PIP package %q in 'flask' repository has %q constraint\n", constraint.Name, constraint.Version)
-
-// output: Random PIP package "toml" in 'flask' repository has "==0.10.2" constraint
-```
-
-TODO: Documentation

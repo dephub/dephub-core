@@ -117,6 +117,9 @@ func NewGitSource(httpClient *http.Client, repoAddr, sha string) (DependencySour
 	if err != nil {
 		return nil, err
 	}
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
 	fetcher := fetchers.NewGitHubFetcher(httpClient, repoData.vendor, repoData.repo, sha)
 	return &GitDependencySource{fetcher: fetcher}, nil
 }
