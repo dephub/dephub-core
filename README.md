@@ -13,6 +13,7 @@ There are several useful packages included:
   - PyPi API
 - Source fetchers ([package README.md](/providers/fetchers/README.md))
 - Dependency files parsers ([package README.md](/providers/parsers/README.md))
+- Versions and constraints parser with checking logic (`/providers/versioneer`)
 
 ## Main `dephub` module
 
