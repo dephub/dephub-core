@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// configureClient configures client that intercepts ALL requests and forwards them into the specified handler.
+// configureClient configures client that intercepts ALL requests and forwards them into the specified handler
 func configureClient(t *testing.T, handleFunc http.Handler) *http.Client {
 	t.Helper()
 	srv := httptest.NewTLSServer(handleFunc)
